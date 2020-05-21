@@ -316,29 +316,12 @@ open class SwiftyCamViewController: UIViewController {
 
 		// Test authorization status for Camera and Micophone
 
-		switch AVCaptureDevice.authorizationStatus(for: AVMediaType.video) {
-		case .authorized:
-
-			// already authorized
-			break
-		case .notDetermined:
-
-			// not yet determined
-			sessionQueue.suspend()
-			AVCaptureDevice.requestAccess(for: AVMediaType.video, completionHandler: { [unowned self] granted in
-				if !granted {
-					self.setupResult = .notAuthorized
-				}
-				self.sessionQueue.resume()
-			})
-		default:
-
-			// already been asked. Denied access
-			setupResult = .notAuthorized
-		}
-		sessionQueue.async { [unowned self] in
-			self.configureSession()
-		}
+		checkCameraPermission()
+        checkMicrophonePermission()
+        
+        sessionQueue.async { [unowned self] in
+            self.configureSession()
+        }
 	}
 
     // MARK: ViewDidLayoutSubviews
@@ -421,30 +404,25 @@ open class SwiftyCamViewController: UIViewController {
 		setBackgroundAudioPreference()
 
 		sessionQueue.async {
-			switch self.setupResult {
-			case .success:
-				// Begin Session
-				self.session.startRunning()
-				self.isSessionRunning = self.session.isRunning
+            switch self.setupResult {
+            case .success:
+                // Begin Session
+                self.session.startRunning()
+                self.isSessionRunning = self.session.isRunning
 
                 // Preview layer video orientation can be set only after the connection is created
                 DispatchQueue.main.async {
                     self.previewLayer.videoPreviewLayer.connection?.videoOrientation = self.orientation.getPreviewLayerOrientation()
                 }
-
-			case .notAuthorized:
-                if self.shouldPrompToAppSettings == true {
-                    self.promptToAppSettings()
-                } else {
-                    self.cameraDelegate?.swiftyCamNotAuthorized(self)
-                }
-			case .configurationFailed:
-				// Unknown Error
+            case .configurationFailed:
+                // Unknown Error
                 DispatchQueue.main.async {
                     self.cameraDelegate?.swiftyCamDidFailToConfigure(self)
                 }
-			}
-		}
+            default:
+                break
+            }
+        }
 	}
 
 	// MARK: ViewDidDisappear
@@ -472,6 +450,96 @@ open class SwiftyCamViewController: UIViewController {
 			orientation.stop()
 		}
 	}
+    
+    func checkCameraPermission() {
+        switch AVCaptureDevice.authorizationStatus(for: AVMediaType.video) {
+        case .authorized:
+            // already authorized
+            self.setupResult = .success
+            self.cameraDelegate?.swiftyCamAuthorized(self)
+            break
+        default:
+            // not yet determined
+            self.setupResult = .notAuthorized
+            self.cameraDelegate?.swiftyCamNotAuthorized(self)
+            break
+        }
+    }
+    
+    func checkMicrophonePermission() {
+        switch AVCaptureDevice.authorizationStatus(for: AVMediaType.audio) {
+        case .authorized:
+            // already authorized
+            self.cameraDelegate?.swiftyCamMicrophoneAuthorized(self)
+            break
+        default:
+            self.cameraDelegate?.swiftyCamMicrophoneNotAuthorized(self)
+            break
+        }
+    }
+    
+    private func promptToAppSettings(title: String, message: String) {
+        DispatchQueue.main.async(execute: { [unowned self] in
+            let alertController = UIAlertController(title: title,
+                                                    message: message, preferredStyle: .alert)
+            alertController.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: "Alert OK button"), style: .cancel, handler: nil))
+            alertController.addAction(UIAlertAction(title: NSLocalizedString("Settings", comment: "Alert button to open Settings"), style: .default, handler: { action in
+                if #available(iOS 10.0, *) {
+                    UIApplication.shared.openURL(URL(string: UIApplication.openSettingsURLString)!)
+                } else {
+                    if let appSettings = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.openURL(appSettings)
+                    }
+                }
+            }))
+            self.present(alertController, animated: true, completion: nil)
+        })
+    }
+    
+    public func requestCameraPermission(promtTitle: String, promtMessage: String) {
+        let cameraAccessStatus = AVCaptureDevice.authorizationStatus(for: AVMediaType.video)
+        switch cameraAccessStatus {
+        case .authorized :
+            break
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: AVMediaType.video, completionHandler: { [unowned self] granted in
+                if granted {
+                    self.setupResult = .success
+                    self.configureSession()
+                    self.sessionQueue.async {
+                        self.session.startRunning()
+                        self.isSessionRunning = self.session.isRunning
+
+                        // Preview layer video orientation can be set only after the connection is created
+                        DispatchQueue.main.async {
+                            self.previewLayer.videoPreviewLayer.connection?.videoOrientation = self.orientation.getPreviewLayerOrientation()
+                        }
+                    }
+                    self.cameraDelegate?.swiftyCamAuthorized(self)
+                }
+            })
+        default:
+            promptToAppSettings(title: promtTitle,
+                                     message: promtMessage)
+        }
+    }
+    
+    public func requestMicrophonePermission(promtTitle: String, promtMessage: String) {
+        let microphoneAccessStatus = AVCaptureDevice.authorizationStatus(for: AVMediaType.audio)
+        switch microphoneAccessStatus {
+        case .authorized :
+            break
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: AVMediaType.audio, completionHandler: { [unowned self] granted in
+                if granted {
+                    self.cameraDelegate?.swiftyCamMicrophoneAuthorized(self)
+                }
+            })
+        default:
+            promptToAppSettings(title: promtTitle,
+                                     message: promtMessage)
+        }
+    }
 
 	// MARK: Public Functions
 
@@ -862,28 +930,6 @@ open class SwiftyCamViewController: UIViewController {
 		} else {
 			completionHandler(false)
 		}
-	}
-
-	/// Handle Denied App Privacy Settings
-
-	fileprivate func promptToAppSettings() {
-		// prompt User with UIAlertView
-
-		DispatchQueue.main.async(execute: { [unowned self] in
-			let message = NSLocalizedString("AVCam doesn't have permission to use the camera, please change privacy settings", comment: "Alert message when the user has denied access to the camera")
-			let alertController = UIAlertController(title: "AVCam", message: message, preferredStyle: .alert)
-			alertController.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: "Alert OK button"), style: .cancel, handler: nil))
-			alertController.addAction(UIAlertAction(title: NSLocalizedString("Settings", comment: "Alert button to open Settings"), style: .default, handler: { action in
-				if #available(iOS 10.0, *) {
-					UIApplication.shared.openURL(URL(string: UIApplication.openSettingsURLString)!)
-				} else {
-					if let appSettings = URL(string: UIApplication.openSettingsURLString) {
-						UIApplication.shared.openURL(appSettings)
-					}
-				}
-			}))
-			self.present(alertController, animated: true, completion: nil)
-		})
 	}
 
 	/**
