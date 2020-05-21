@@ -130,6 +130,30 @@ public protocol SwiftyCamViewControllerDelegate: class {
      */
     
     func swiftyCamNotAuthorized(_ swiftyCam: SwiftyCamViewController)
+    
+    /**
+     SwiftyCamViewControllerDelegate function called when when SwiftyCamViewController does not have access to microphone.
+     
+     - Parameter swiftyCam: Current SwiftyCamViewController
+     */
+    
+    func swiftyCamMicrophoneNotAuthorized(_ swiftyCam: SwiftyCamViewController)
+    
+    /**
+     SwiftyCamViewControllerDelegate function called when when SwiftyCamViewController does  have access to camera.
+     
+     - Parameter swiftyCam: Current SwiftyCamViewController
+     */
+    
+    func swiftyCamAuthorized(_ swiftyCam: SwiftyCamViewController)
+
+    /**
+     SwiftyCamViewControllerDelegate function called when when SwiftyCamViewController does  have access to microphone.
+     
+     - Parameter swiftyCam: Current SwiftyCamViewController
+     */
+    
+    func swiftyCamMicrophoneAuthorized(_ swiftyCam: SwiftyCamViewController)
 }
 
 public extension SwiftyCamViewControllerDelegate {
@@ -184,6 +208,18 @@ public extension SwiftyCamViewControllerDelegate {
     }
     
     func swiftyCamNotAuthorized(_ swiftyCam: SwiftyCamViewController) {
+        // Optional
+    }
+    
+    func swiftyCamMicrophoneNotAuthorized(_ swiftyCam: SwiftyCamViewController) {
+        // Optional
+    }
+    
+    func swiftyCamAuthorized(_ swiftyCam: SwiftyCamViewController) {
+        // Optional
+    }
+
+    func swiftyCamMicrophoneAuthorized(_ swiftyCam: SwiftyCamViewController) {
         // Optional
     }
 }
