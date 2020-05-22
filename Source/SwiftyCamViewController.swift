@@ -189,7 +189,7 @@ open class SwiftyCamViewController: UIViewController {
 
     /// Sets whether or not video recordings will record audio
     /// Setting to true will prompt user for access to microphone on View Controller launch.
-    public var audioEnabled                   = true
+    public var audioEnabled                   = false
 
     /// Sets whether or not app should display prompt to app settings if audio/video permission is denied
     /// If set to false, delegate function will be called to handle exception
@@ -459,7 +459,6 @@ open class SwiftyCamViewController: UIViewController {
             self.cameraDelegate?.swiftyCamAuthorized(self)
             break
         default:
-            // not yet determined
             self.setupResult = .notAuthorized
             self.cameraDelegate?.swiftyCamNotAuthorized(self)
             break
@@ -470,6 +469,7 @@ open class SwiftyCamViewController: UIViewController {
         switch AVCaptureDevice.authorizationStatus(for: AVMediaType.audio) {
         case .authorized:
             // already authorized
+            self.audioEnabled = true
             self.cameraDelegate?.swiftyCamMicrophoneAuthorized(self)
             break
         default:
@@ -532,6 +532,8 @@ open class SwiftyCamViewController: UIViewController {
         case .notDetermined:
             AVCaptureDevice.requestAccess(for: AVMediaType.audio, completionHandler: { [unowned self] granted in
                 if granted {
+                    self.audioEnabled = true
+                    self.configureSession()
                     self.cameraDelegate?.swiftyCamMicrophoneAuthorized(self)
                 }
             })
@@ -576,7 +578,7 @@ open class SwiftyCamViewController: UIViewController {
 
 	*/
 
-	public func startVideoRecording() {
+	open func startVideoRecording() {
 
         guard sessionRunning == true else {
             print("[SwiftyCam]: Cannot start video recoding. Capture session is not running")
@@ -642,7 +644,7 @@ open class SwiftyCamViewController: UIViewController {
 
 	*/
 
-	public func stopVideoRecording() {
+	open func stopVideoRecording() {
 		if self.isVideoRecording == true {
 			self.isVideoRecording = false
 			movieFileOutput!.stopRecording()
