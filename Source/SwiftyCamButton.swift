@@ -54,6 +54,8 @@ open class SwiftyCamButton: UIButton {
     
     public weak var delegate: SwiftyCamButtonDelegate?
     
+    public weak var gestureRecognizerDelegate: UIGestureRecognizerDelegate?
+    
     // Sets whether button is enabled
     
     public var buttonEnabled = true
@@ -135,6 +137,8 @@ open class SwiftyCamButton: UIButton {
     fileprivate func createGestureRecognizers() {
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(SwiftyCamButton.Tap))
         let longGesture = UILongPressGestureRecognizer(target: self, action: #selector(SwiftyCamButton.LongPress))
+        tapGesture.delegate = gestureRecognizerDelegate
+        longGesture.delegate = gestureRecognizerDelegate
         self.addGestureRecognizer(tapGesture)
         self.addGestureRecognizer(longGesture)
     }
