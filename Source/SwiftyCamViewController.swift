@@ -392,6 +392,9 @@ open class SwiftyCamViewController: UIViewController {
 	/// ViewDidAppear(_ animated:) Implementation
 	override open func viewDidAppear(_ animated: Bool) {
 		super.viewDidAppear(animated)
+        
+        checkCameraPermission()
+        checkMicrophonePermission()
 
 		// Subscribe to device rotation notifications
 
