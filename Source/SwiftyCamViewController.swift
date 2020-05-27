@@ -436,14 +436,14 @@ open class SwiftyCamViewController: UIViewController {
 	override open func viewDidDisappear(_ animated: Bool) {
 		super.viewDidDisappear(animated)
 
-        NotificationCenter.default.removeObserver(self)
-        sessionRunning = false
-
 		// If session is running, stop the session
 		if self.isSessionRunning == true {
 			self.session.stopRunning()
 			self.isSessionRunning = false
 		}
+        
+        NotificationCenter.default.removeObserver(self)
+        sessionRunning = false
 
 		//Disble flash if it is currently enabled
 		disableFlash()
