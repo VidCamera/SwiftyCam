@@ -732,8 +732,8 @@ open class SwiftyCamViewController: UIViewController {
 
 		session.beginConfiguration()
 		configureVideoPreset()
-		addVideoInput()
 		addAudioInput()
+		addVideoInput()
 		configureVideoOutput()
 		configurePhotoOutput()
 
@@ -1072,7 +1072,7 @@ fileprivate func changeFlashSettings(device: AVCaptureDevice, mode: FlashMode) {
                 AVAudioSession.sharedInstance().perform(selector, with: category, with: options)
             }
             try AVAudioSession.sharedInstance().setActive(true)
-			session.automaticallyConfiguresApplicationAudioSession = false
+			session.automaticallyConfiguresApplicationAudioSession = true
 		}
 		catch {
 			print("[SwiftyCam]: Failed to set background audio preference")
